@@ -1,3 +1,5 @@
+# Define your variables here
+
 variable "location" {
   description = "Azure region for resources"
   default     = "westus3"
@@ -18,35 +20,40 @@ variable "source_ip_prefix" {
   default     = "97.0.0.0/8"
 }
 
+variable "resource_group_name" {
+  description = "Name of the Azure resource group"
+  default     = "TerraformRG"
+}
+
 # Provider configuration
 provider "azurerm" {
   features {}
 }
 
-# Resource group
+# Create a resource group
 resource "azurerm_resource_group" "terraform" {
-  name     = "TerraformRG"
+  name     = var.resource_group_name
   location = var.location
 }
 
-# Virtual network
-resource "azurerm_virtual_network" "NGINX_VNET" {
+# Define the virtual network
+resource "azurerm_virtual_network" "nginx_vnet" {
   name                = "NGINX_VNET"
   address_space       = var.address_space
   location            = azurerm_resource_group.terraform.location
   resource_group_name = azurerm_resource_group.terraform.name
 }
 
-# Subnet
+# Define the subnet
 resource "azurerm_subnet" "nginx_subnet" {
   name                 = "nginx_subnet"
   resource_group_name  = azurerm_resource_group.terraform.name
-  virtual_network_name = azurerm_virtual_network.NGINX_VNET.name
+  virtual_network_name = azurerm_virtual_network.nginx_vnet.name
   address_prefixes     = [var.subnet_address_prefix]
 }
 
-# Network security group
-resource "azurerm_network_security_group" "NSG_Only_from_Centurylink" {
+# Define the network security group
+resource "azurerm_network_security_group" "nsg_only_from_centurylink" {
   name                = "NSG_Only_from_Centurylink"
   location            = azurerm_resource_group.terraform.location
   resource_group_name = azurerm_resource_group.terraform.name
@@ -64,7 +71,7 @@ resource "azurerm_network_security_group" "NSG_Only_from_Centurylink" {
   }
 }
 
-# Public IPs
+# Define public IPs
 resource "azurerm_public_ip" "lb" {
   name                = "LB_PublicIP"
   location            = azurerm_resource_group.terraform.location
@@ -79,7 +86,7 @@ resource "azurerm_public_ip" "nic" {
   allocation_method   = "Dynamic"
 }
 
-# Network interface
+# Define the network interface
 resource "azurerm_network_interface" "example" {
   name                = "VM_NIC"
   location            = azurerm_resource_group.terraform.location
@@ -93,7 +100,7 @@ resource "azurerm_network_interface" "example" {
   }
 }
 
-# Virtual machine
+# Define the virtual machine
 resource "azurerm_linux_virtual_machine" "nginxvm" {
   name                = "NGINXVM"
   location            = azurerm_resource_group.terraform.location
@@ -122,8 +129,8 @@ resource "azurerm_linux_virtual_machine" "nginxvm" {
   disable_password_authentication = false
 }
 
-# Load balancer
-resource "azurerm_lb" "LB_External" {
+# Define the load balancer
+resource "azurerm_lb" "lb_external" {
   name                = "LB_External"
   location            = azurerm_resource_group.terraform.location
   resource_group_name = azurerm_resource_group.terraform.name
@@ -135,27 +142,27 @@ resource "azurerm_lb" "LB_External" {
   }
 }
 
-# Load balancer backend pool
+# Define the load balancer backend pool
 resource "azurerm_lb_backend_address_pool" "example" {
   name              = "backendPool"
-  loadbalancer_id   = azurerm_lb.LB_External.id
+  loadbalancer_id   = azurerm_lb.lb_external.id
 }
 
-# Load balancer probe
-resource "azurerm_lb_probe" "HTTPprobe" {
+# Define the load balancer probe
+resource "azurerm_lb_probe" "http_probe" {
   name              = "httpProbe"
   protocol          = "Tcp"
   port              = "80"
-  loadbalancer_id   = azurerm_lb.LB_External.id
+  loadbalancer_id   = azurerm_lb.lb_external.id
 }
 
-# Load balancer rule
-resource "azurerm_lb_rule" "example" {
+# Define the load balancer rule
+resource "azurerm_lb_rule" "http" {
   name                           = "http"
-  loadbalancer_id                 = azurerm_lb.LB_External.id
+  loadbalancer_id                 = azurerm_lb.lb_external.id
   frontend_ip_configuration_name  = "publicIPAddress"
   backend_address_pool_ids        = [azurerm_lb_backend_address_pool.example.id]
-  probe_id                        = azurerm_lb_probe.HTTPprobe.id
+  probe_id                        = azurerm_lb_probe.http_probe.id
   protocol                        = "Tcp"
   frontend_port                   = 80
   backend_port                    = 80
