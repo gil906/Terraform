@@ -22,6 +22,7 @@ variable "aks_node_count" {
   default     = 2
 }
 
+
 variable "aks_node_size" {
   description = "Size of AKS nodes"
   default     = "Standard_B2s"
@@ -61,6 +62,7 @@ resource "kubernetes_deployment" "nginx" {
   metadata {
     name = "nginx-deployment"
   }
+
 
   spec {
     replicas = 2
