@@ -1,6 +1,3 @@
-# Will run Kubernetes with 2 Nodes running NGNIX. They can be accesible from internet since teh type is Load Balancer
-#This is main.tf V1.2
-
 # Define variables here
 variable "resource_group_name" {
   description = "Name of the Azure resource group"
@@ -22,10 +19,24 @@ variable "aks_node_count" {
   default     = 2
 }
 
-
 variable "aks_node_size" {
   description = "Size of AKS nodes"
   default     = "Standard_B2s"
+}
+
+variable "nginx_image" {
+  description = "NGINX container image to use"
+  default     = "nginx:latest"
+}
+
+variable "enable_https" {
+  description = "Enable HTTPS for NGINX"
+  default     = true
+}
+
+variable "tls_secret_name" {
+  description = "Name of the Kubernetes secret for TLS"
+  default     = "tls-secret"
 }
 
 # Provider configuration
@@ -63,7 +74,6 @@ resource "kubernetes_deployment" "nginx" {
     name = "nginx-deployment"
   }
 
-
   spec {
     replicas = 2
 
@@ -82,7 +92,7 @@ resource "kubernetes_deployment" "nginx" {
 
       spec {
         container {
-          image = "nginx:latest"
+          image = var.nginx_image
           name  = "nginx"
 
           ports {
@@ -114,6 +124,47 @@ resource "kubernetes_service" "nginx" {
   }
 }
 
+# Optionally, enable HTTPS for NGINX
+resource "kubernetes_secret" "tls" {
+  count = var.enable_https ? 1 : 0
+
+  metadata {
+    name = var.tls_secret_name
+  }
+
+  data = {
+    "tls.crt" = file("path/to/tls.crt")
+    "tls.key" = file("path/to/tls.key")
+  }
+}
+
+resource "kubernetes_ingress" "nginx" {
+  count = var.enable_https ? 1 : 0
+
+  metadata {
+    name = "nginx-ingress"
+  }
+
+  spec {
+    tls {
+      secret_name = kubernetes_secret.tls[0].metadata[0].name
+    }
+
+    rule {
+      host = "your-domain.com"
+      http {
+        path {
+          path = "/"
+          backend {
+            service_name = kubernetes_service.nginx.metadata[0].name
+            service_port = kubernetes_service.nginx.spec[0].port[0].port
+          }
+        }
+      }
+    }
+  }
+}
+
 # Output for the kube_config block to access the AKS cluster
 output "kube_config" {
   value = azurerm_kubernetes_cluster.aks.kube_config.0
@@ -126,5 +177,5 @@ output "cluster_credentials" {
 
 # Output for the public IP address of the NGINX service
 output "nginx_service_public_ip" {
-  value = kubernetes_service.nginx.status.0.load_balancer_ingress.0.ip
+  value = kubernetes_service.nginx.status[0].load_balancer_ingress[0].ip
 }
