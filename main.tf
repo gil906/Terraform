@@ -129,7 +129,7 @@ resource "kubernetes_service" "nginx" {
   }
 }
 
-# Optionally, enable HTTPS for NGINX
+# Optional: enable HTTPS for NGINX
 resource "kubernetes_secret" "tls" {
   count = var.enable_https ? 1 : 0
 
@@ -188,12 +188,12 @@ output "kube_config" {
   value = azurerm_kubernetes_cluster.aks.kube_config.0
 }
 
-# Output for the AKS cluster's credentials
+# Output for the AKS cluster's credentials as reference
 output "cluster_credentials" {
   value = azurerm_kubernetes_cluster.aks
 }
 
-# Output for the public IP address of the NGINX service
+# Output for the public IP address of the NGINX service as reference
 output "nginx_service_public_ip" {
   value = kubernetes_service.nginx.status[0].load_balancer_ingress[0].ip
 }
