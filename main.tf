@@ -39,6 +39,11 @@ variable "tls_secret_name" {
   default     = "tls-secret"
 }
 
+variable "enable_helm" {
+  description = "Enable Helm for deploying applications"
+  default     = true
+}
+
 # Provider configuration
 provider "azurerm" {
   features {}
@@ -162,6 +167,19 @@ resource "kubernetes_ingress" "nginx" {
         }
       }
     }
+  }
+}
+
+# Enable Helm for deploying applications
+resource "null_resource" "helm_init" {
+  count = var.enable_helm ? 1 : 0
+
+  triggers = {
+    always_run = "${timestamp()}"
+  }
+
+  provisioner "local-exec" {
+    command = "helm init --upgrade"
   }
 }
 
