@@ -1,0 +1,7 @@
+[your_postgresql_server]
+your_postgresql_server_ip
+
+[your_aks_nodes]
+aks_node1_ip
+aks_node2_ip
+# Add more AKS nodes as needed
