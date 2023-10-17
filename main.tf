@@ -5,12 +5,10 @@ provider "azurerm" {
   features {}
 }
 
-
 # Creates the Azure Kubernetes Service (AKS) cluster
 module "aks_cluster" {
   source = "./aks"
 }
-
 
 # Creates resources for Nginx
 module "nginx_resources" {
