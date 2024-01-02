@@ -1,6 +1,6 @@
 # main.tf
-
 # Defines the Azure provider block
+
 provider "azurerm" {
   features {}
 }
