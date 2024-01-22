@@ -1,7 +1,7 @@
 #This will create a VNET with an External Load Balancer pointing to 2 VMS running NGNIX
 #This is main.tf V1
-
 # Define your variables here
+
 
 variable "location" {
   description = "Azure region for resources"
