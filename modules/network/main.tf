@@ -101,3 +101,48 @@ resource "azurerm_linux_virtual_machine" "nginxvm" {
 output "lb_public_ip" {
   value = azurerm_public_ip.lb.ip_address
 }
+
+
+
+
+variable "enable_ssh" {
+  description = "Enable SSH traffic to VMs"
+  default     = true
+}
+
+resource "azurerm_network_security_group" "nsg_allow_ssh" {
+  count               = var.enable_ssh ? 1 : 0
+  name                = "NSG_Allow_SSH"
+  location            = azurerm_resource_group.terraform.location
+  resource_group_name = azurerm_resource_group.terraform.name
+
+  security_rule {
+    name                       = "ssh"
+    priority                   = 1002
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+
+
+resource "azurerm_linux_virtual_machine" "nginxvm" {
+  # ...
+
+  provisioner "local-exec" {
+    command = "./verification.sh ${azurerm_public_ip.lb.ip_address}"
+  }
+}
+
+
+# modules/network/main.tf
+
+output "vm_ids" {
+  value = azurerm_linux_virtual_machine.nginxvm[*].id
+}
+
