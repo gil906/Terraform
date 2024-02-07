@@ -104,7 +104,6 @@ output "lb_public_ip" {
 
 
 
-
 variable "enable_ssh" {
   description = "Enable SSH traffic to VMs"
   default     = true
@@ -128,8 +127,6 @@ resource "azurerm_network_security_group" "nsg_allow_ssh" {
     destination_address_prefix = "*"
   }
 }
-
-
 
 resource "azurerm_linux_virtual_machine" "nginxvm" {
   # ...
